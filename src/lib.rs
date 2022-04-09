@@ -29,7 +29,12 @@ impl<'a> TransJson<'a> {
     }
 }
 
-fn trans_with_level(level: u32, next: bool, json_chars: &mut Chars<'_>) -> String {
+fn trans_with_level(
+    level: u32,
+    next: bool,
+    is_not_array: bool,
+    json_chars: &mut Chars<'_>,
+) -> String {
     // 例えば'{'の時：'"{'という風にダブルクォーテーションをつけ、再帰
     let mut text = "".to_string();
     // level 0 : 2^0-1 : "{"
@@ -50,7 +55,12 @@ fn trans_with_level(level: u32, next: bool, json_chars: &mut Chars<'_>) -> Strin
                     text.push('"');
                 }
                 text.push('{');
-                text.push_str(&trans_with_level(level + 1, true, json_chars));
+                text.push_str(&trans_with_level(
+                    level + if is_not_array { 1 } else { 0 },
+                    true,
+                    true,
+                    json_chars,
+                ));
                 if next {
                     text.push_str(&escape);
                     text.push('"');
@@ -64,12 +74,14 @@ fn trans_with_level(level: u32, next: bool, json_chars: &mut Chars<'_>) -> Strin
                 text.push_str(&escape);
                 text.push('"');
                 text.push('[');
-                text.push_str(&trans_with_level(level, false, json_chars));
+                text.push_str(&trans_with_level(level, false, true, json_chars));
             }
             ']' => {
                 text.push(']');
-                text.push_str(&escape);
-                text.push('"');
+                if is_not_array {
+                    text.push_str(&escape);
+                    text.push('"');
+                }
                 return text;
             }
             any => {
@@ -87,11 +99,11 @@ fn escape_for_nested_json(s: &str) -> String {
         match ch {
             '{' => {
                 text.push('{');
-                text.push_str(&trans_with_level(0, true, json_chars));
+                text.push_str(&trans_with_level(0, true, true, json_chars));
             }
             '[' => {
                 text.push('[');
-                text.push_str(&trans_with_level(0, true, json_chars));
+                text.push_str(&trans_with_level(0, false, false, json_chars));
             }
             any => {
                 text.push(any);
@@ -100,6 +112,12 @@ fn escape_for_nested_json(s: &str) -> String {
     }
     text
 }
+
+// fn main() {
+//     tests::small();
+//     tests::big();
+//     tests::array();
+// }
 
 #[cfg(test)]
 mod tests {
@@ -126,21 +144,23 @@ mod tests {
     }
 
     #[test]
-    fn small() {
+    pub fn small() {
         let x = A {
             other_struct: B { value: 42 },
         };
 
         // one line and use escape
         let s: &str = &r#"{"other_struct":"{\"value\":42}"}"#;
-        let json = s; // no-trans
+        let json = s;
+        // println!("{}", json);
         let ok: A = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
         // one line and not use escape
         let s: &str = &r#"{"other_struct":{"value":42}}"#;
         let translator = TransJson::new(s);
-        let json = translator.escape(); // trans
+        let json = translator.escape();
+        // println!("{}", json);
         let ok: A = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
@@ -153,7 +173,8 @@ mod tests {
         }
         "#;
         let translator = TransJson::new(s);
-        let json = translator.oneline(); // trans
+        let json = translator.oneline();
+        // println!("{}", json);
         let ok: A = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
@@ -167,12 +188,13 @@ mod tests {
         "#;
         let translator = TransJson::new(s);
         let json = translator.trans();
+        // println!("{}", json);
         let ok: A = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
     }
 
     #[test]
-    fn big() {
+    pub fn big() {
         let x = C {
             other_struct: D {
                 other_structs: vec![B { value: 42 }],
@@ -181,14 +203,16 @@ mod tests {
 
         // one line and use escape
         let s: &str = r#"{"other_struct":"{\"other_structs\":\"[{\\\"value\\\":42}]\"}"}"#;
-        let json = s; // no-trans
+        let json = s;
+        // println!("{}", json);
         let ok: C = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
         // one line and not use escape
         let s = r#"{"other_struct":{"other_structs":[{"value":42}]}}"#;
         let translator = TransJson::new(s);
-        let json = translator.escape(); // trans
+        let json = translator.escape();
+        // println!("{}", json);
         let ok: C = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
@@ -205,7 +229,8 @@ mod tests {
         }
         "#;
         let translator = TransJson::new(s);
-        let json = translator.oneline(); // trans
+        let json = translator.oneline();
+        // println!("{}", json);
         let ok: C = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
@@ -222,8 +247,28 @@ mod tests {
         }
         "#;
         let translator = TransJson::new(s);
-        let json = translator.trans(); // trans
+        let json = translator.trans();
+        // println!("{}", json);
         let ok: C = serde_json::from_str(&json).unwrap();
+        assert_eq!(ok, x);
+    }
+    #[test]
+    pub fn array() {
+        let x = vec![B { value: 42 }, B { value: 28 }];
+        let s = r#"
+        [
+            {
+                "value": 42
+            },
+            {
+                "value": 28
+            }
+        ]
+        "#;
+        let translator = TransJson::new(s);
+        let json = translator.trans();
+        // println!("{}", json);
+        let ok: Vec<B> = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
     }
 }
