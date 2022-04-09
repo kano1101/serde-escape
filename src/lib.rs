@@ -1,7 +1,7 @@
 use serde::{self, Deserialize, Serialize};
 use std::str::Chars;
 
-struct TransJson<'a> {
+pub struct TransJson<'a> {
     s: &'a str,
 }
 
