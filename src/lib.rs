@@ -151,16 +151,16 @@ mod tests {
 
         // one line and use escape
         let s: &str = &r#"{"other_struct":"{\"value\":42}"}"#;
-        let json = s; // no-trans
-        println!("{}", json);
+        let json = s;
+        // println!("{}", json);
         let ok: A = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
         // one line and not use escape
         let s: &str = &r#"{"other_struct":{"value":42}}"#;
         let translator = TransJson::new(s);
-        let json = translator.escape(); // trans
-        println!("{}", json);
+        let json = translator.escape();
+        // println!("{}", json);
         let ok: A = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
@@ -173,8 +173,8 @@ mod tests {
         }
         "#;
         let translator = TransJson::new(s);
-        let json = translator.oneline(); // trans
-        println!("{}", json);
+        let json = translator.oneline();
+        // println!("{}", json);
         let ok: A = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
@@ -188,7 +188,7 @@ mod tests {
         "#;
         let translator = TransJson::new(s);
         let json = translator.trans();
-        println!("{}", json);
+        // println!("{}", json);
         let ok: A = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
     }
@@ -203,16 +203,16 @@ mod tests {
 
         // one line and use escape
         let s: &str = r#"{"other_struct":"{\"other_structs\":\"[{\\\"value\\\":42}]\"}"}"#;
-        let json = s; // no-trans
-        println!("{}", json);
+        let json = s;
+        // println!("{}", json);
         let ok: C = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
         // one line and not use escape
         let s = r#"{"other_struct":{"other_structs":[{"value":42}]}}"#;
         let translator = TransJson::new(s);
-        let json = translator.escape(); // trans
-        println!("{}", json);
+        let json = translator.escape();
+        // println!("{}", json);
         let ok: C = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
@@ -229,8 +229,8 @@ mod tests {
         }
         "#;
         let translator = TransJson::new(s);
-        let json = translator.oneline(); // trans
-        println!("{}", json);
+        let json = translator.oneline();
+        // println!("{}", json);
         let ok: C = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
 
@@ -247,8 +247,8 @@ mod tests {
         }
         "#;
         let translator = TransJson::new(s);
-        let json = translator.trans(); // trans
-        println!("{}", json);
+        let json = translator.trans();
+        // println!("{}", json);
         let ok: C = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
     }
@@ -266,15 +266,8 @@ mod tests {
         ]
         "#;
         let translator = TransJson::new(s);
-
-        let mut json = translator.oneline();
-        json.retain(|c| c != ' ');
-        println!("{}", json);
-
-        let mut json = translator.trans();
-        json.retain(|c| c != ' ');
-        println!("{}", json);
-
+        let json = translator.trans();
+        // println!("{}", json);
         let ok: Vec<B> = serde_json::from_str(&json).unwrap();
         assert_eq!(ok, x);
     }
