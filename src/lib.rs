@@ -1,7 +1,14 @@
 use serde::{self, Deserialize, Serialize};
 use std::str::Chars;
 
-pub struct TransJson<'a> {
+pub fn escape(bytes: &[u8]) -> Option<String> {
+    let s = std::str::from_utf8(bytes).ok()?;
+    let translator = TransJson::new(s);
+    let json_data = translator.trans();
+    Some(json_data)
+}
+
+struct TransJson<'a> {
     s: &'a str,
 }
 
